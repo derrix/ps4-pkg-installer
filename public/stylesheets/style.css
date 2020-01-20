@@ -1,0 +1,20 @@
+body{
+  font-family: 'Play', sans-serif;
+  min-height: 75rem;
+  padding-top: 4.5rem;
+background: rgb(52,58,64);
+background: linear-gradient(162deg, rgba(52,58,64,1) 0%, rgba(33,84,139,1) 35%, rgba(65,118,172,1) 100%);
+  background-size: 100% 100%;
+  background-attachment: fixed;
+}
+.nowrap
+{
+  white-space: nowrap;
+}
+.break-all
+{
+  word-break: break-all;
+}
+
+
+

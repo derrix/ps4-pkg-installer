@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="pkgInstallerApp">
+
+<head>
+  <% include partials/head %>
+</head>
+
+<body>
+
+
+
+  <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+    <a class="navbar-brand" href="#">PS4 PKG Installer</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
+      aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+  </nav>
+
+  <main role="main" class="container" id="mainController" ng-controller="mainController">
+    <div class="row">
+      <div class="col-md-10 order-md-1">
+
+        <div class="col-md-12 text-light bg-dark bd-callout bd-callout-info">
+          <h4>Search</h4>
+          <div class="row">
+            <div class="col-md-12 mb-12">
+              <div class="input-group">
+                <input type="text" class="form-control" id="validationDefaultUsername" placeholder="Search ..."
+                  ng-model="searchBox.fileName" id="searchBox" name="searchBox" aria-describedby="inputGroupPrepend2"
+                  required>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <table class="table table-striped table-dark" ng-if="files.length">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">File name</th>
+              <th scope="col">Version</th>
+              <th scope="col">Size</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="file in files | orderBy:'fileName' | filter:searchBox:strict">
+              <th scope="row">
+                <div class="" ng-if="file.status">
+                  <div class="spinner-grow text-light" role="status">
+                    <span class="sr-only">Loading...</span>
+                  </div>
+                </div>
+                <div ng-if="!file.status && !file.metaData">
+                  {{$index + 1}}
+                </div>
+                <div ng-if="!file.status && file.metaData">
+                  {{file.metaData.TITLE_ID}}
+                </div>
+
+              </th>
+
+              <td ng-if="!file.metaData">{{file.fileName}}</td>
+              <td ng-if="file.metaData"><span class="break-all">{{file.metaData.TITLE}}</span></td>
+              <td ng-if="file.metaData"><span class="break-all">{{file.metaData.VERSION}}</span></td>
+              <td>
+                <div class="nowrap">{{humanFileSize(file.fileSize, true)}}</div>
+              </td>
+              <td>
+                <div class="" ng-if="file.status && file.status != -1">
+                  <p>Installing ...<br>
+                    Time left: {{humanTime(file.status.rest_sec_total*1000)}}</p>
+                </div>
+                <div ng-if="file.status < 0">
+                  <p>Preparing</p>
+                </div>
+                <div ng-if="!file.status">
+                  <div class="nowrap">
+                    <button type="button" class="btn btn-success" ng-click="uploadFile(file)"
+                      ng-disabled="settingForm.ps4IpAddress.$error.required  ||  settingForm.ps4IpAddress.$error.pattern || settingForm.serverIpAddress.$error.required">Install</button>
+
+                    <button ng-if="file.metaData" type="button" class="btn btn-danger"
+                      ng-disabled=" settingForm.serverIpAddress.$error.required"
+                      ng-click="uninstallFile(file)">Uninstall</button>
+                  </div>
+
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div ng-if="!files.length" class="bd-callout bd-callout-danger text-light bg-dark">
+          <h4>PKG Not founds</h4>
+          <p>Set PKG folder path on sidebar</p>
+        </div>
+
+
+      </div>
+      <div class="col-md-2 order-md-2 mb-2 text-light bg-dark bd-callout">
+        <h4>Settings</h4>
+        <form name="settingForm">
+          <div class="form-group">
+            <label for="ps4IpAddress">PS4 IP Address</label>
+
+            <input type="text" class="form-control" placeholder="Insert PS4 IP Address" id="ps4IpAddress"
+              name="ps4IpAddress" type="text" ng-model="ps4IpAddress" ng-maxlength="15" ng-minlength="7"
+              ng-pattern="/\b((^|\.)((25[0-5])|(2[0-4]\d)|(1\d\d)|([1-9]?\d))){4}$\b/" required ng-trim="true"
+              ng-class="{'is-invalid': settingForm.ps4IpAddress.$error.required  ||  settingForm.ps4IpAddress.$error.pattern}"
+              ng-blur="updateValue($event.target.id, $event.target.value)">
+          </div>
+          <div class="form-group">
+            <label for="serverIpAddress">Server IP Address</label>
+            <select class="form-control" id="serverIpAddress" name="serverIpAddress" ng-model="serverIpAddress" required
+              ng-class="{'is-invalid': settingForm.serverIpAddress.$error.required}"
+              ng-blur="updateValue($event.target.id, $event.target.value)">
+              <option value="">Chose your IP Address</option>
+              <% addresses.forEach(function(address){ %>
+              <option><%= address %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="pkgFolderPath">PKG Folder Path</label>
+            <input type="text" class="form-control" placeholder="Insert pkg Folder Path" id="pkgFolderPath"
+              name="pkgFolderPath" type="text" ng-model="pkgFolderPath" required ng-trim="true"
+              ng-class="{'is-invalid': settingForm.pkgFolderPath.$error.required}"
+              ng-blur="updateValue($event.target.id, $event.target.value)">
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="modal fade" id="modalController" tabindex="-1" role="dialog" aria-labelledby="modalCenterTitle"
+    aria-hidden="true" ng-controller="modalController">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalLongTitle">{{title}}</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>{{text}}</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
